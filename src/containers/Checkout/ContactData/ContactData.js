@@ -16,7 +16,11 @@ class ContanctData extends Component {
                     type: 'text',
                     placeholder: 'Your Name'
                 },
-                value: ''
+                value: '',
+                validation: {
+                    required: true
+                },
+                valid: false
             },
 
             street: {
@@ -25,7 +29,11 @@ class ContanctData extends Component {
                     type: 'text',
                     placeholder: 'Street'
                 },
-                value: ''
+                value: '',
+                validation: {
+                    required: true
+                },
+                valid: false
             },
 
             zipCode: {
@@ -34,7 +42,14 @@ class ContanctData extends Component {
                     type: 'text',
                     placeholder: 'ZIP'
                 },
-                value: ''
+                value: '',
+                validation: {
+                    required: true,
+                    maxLength: 5,
+                    minLength: 5,
+                },
+                valid: false,
+
             },
 
             country: {
@@ -43,7 +58,11 @@ class ContanctData extends Component {
                     type: 'text',
                     placeholder: 'Country'
                 },
-                value: ''
+                value: '',
+                validation: {
+                    required: true
+                },
+                valid: false
             },
 
             email: {
@@ -52,7 +71,11 @@ class ContanctData extends Component {
                     type: 'email',
                     placeholder: 'Your E-mail'
                 },
-                value: ''
+                value: '',
+                validation: {
+                    required: true
+                },
+                valid: false
             },
 
             deliveryMethod: {
@@ -71,11 +94,16 @@ class ContanctData extends Component {
 
     orderHandler = (event) => {
         event.preventDefault();
-        this.setState({ loading: true })
+        this.setState({ loading: true });
+        const formData = {};
+        for (let formElementIdentifier in this.state.orderForm) {
+            formData[formElementIdentifier] = this.state.orderForm[formElementIdentifier].value;
+        }
+
         const order = {
             ingredients: this.props.ingredients,
-            price: this.props.price
-
+            price: this.props.price,
+            orderData: formData
         }
 
         axios.post('/orders.json', order)
@@ -88,6 +116,24 @@ class ContanctData extends Component {
             });
     }
 
+    checkValidity(value, rules) {
+        let isValid = true;
+
+        if (rules.required && isValid) {
+            isValid = value.trim() !== '';
+        }
+
+        if (rules.minLength && isValid) {
+            isValid = value.length >= rules.minLength
+        }
+
+        if (rules.maxLength && isValid) {
+            isValid = value.length <= rules.maxLength
+        }
+
+        return isValid;
+    }
+
     inputChangedHandler = (event, inputIdentifier) => {
         const updatedOrderForm = {
             ...this.state.orderForm
@@ -96,7 +142,9 @@ class ContanctData extends Component {
             ...updatedOrderForm[inputIdentifier]
         };
         updatedFormElement.value = event.target.value;
+        updatedFormElement.valid = this.checkValidity(updatedFormElement.value, updatedFormElement.validation)
         updatedOrderForm[inputIdentifier] = updatedFormElement;
+        console.log(updatedFormElement)
         this.setState({ orderForm: updatedOrderForm });
     }
 
@@ -111,7 +159,7 @@ class ContanctData extends Component {
         }
 
         let form = (
-            <form>
+            <form onSubmit={this.orderHandler}>
                 {formElementsArray.map(formElement => (
                     <Input
                         key={formElement.id}
@@ -121,7 +169,7 @@ class ContanctData extends Component {
                         changed={(event) => this.inputChangedHandler(event, formElement.id)} />
 
                 ))}
-                <Button btnType='Success' clicked={this.orderHandler}>ORDER</Button>
+                <Button btnType='Success'>ORDER</Button>
             </form>);
         if (this.state.loading) {
             form = <Spinner />
